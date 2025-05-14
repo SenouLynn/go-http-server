@@ -108,7 +108,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
-	
+
 	// For demonstration, we'll just echo back the updated user
 	json.NewEncoder(w).Encode(user)
 }
