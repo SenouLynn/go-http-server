@@ -34,3 +34,4 @@ The server will start on `http://localhost:8080`
 
 - `GET /` - Returns a welcome message
 - `GET /example/get/users/all` - Returns a message indicating where all users would be returned
+- `GET /example/get/user?email=user@example.com` - Returns user details for the specified email
