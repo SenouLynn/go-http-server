@@ -93,7 +93,7 @@ func getUserByEmail(w http.ResponseWriter, r *http.Request) {
 	var user User
 	err := db.QueryRow("SELECT first_name, last_name, email FROM users WHERE email = ?", email).
 		Scan(&user.FirstName, &user.LastName, &user.Email)
-	
+
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return
@@ -182,7 +182,7 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 	var existingUser User
 	err = db.QueryRow("SELECT first_name, last_name, email FROM users WHERE email = ?", user.Email).
 		Scan(&existingUser.FirstName, &existingUser.LastName, &existingUser.Email)
-	
+
 	if err == sql.ErrNoRows {
 		http.Error(w, "User not found", http.StatusNotFound)
 		return

@@ -10,13 +10,26 @@ import (
 	"testing"
 )
 
+// Helper function to clear the database between tests
+func clearDB() error {
+	_, err := db.Exec("DELETE FROM users")
+	return err
+}
+
+// Helper function to seed a test user
+func seedTestUser(user User) error {
+	_, err := db.Exec("INSERT INTO users (email, first_name, last_name) VALUES (?, ?, ?)",
+		user.Email, user.FirstName, user.LastName)
+	return err
+}
+
 func TestMain(m *testing.M) {
 	// Set up test database
-	db, err := sql.Open("sqlite3", "./test.db")
+	var err error
+	db, err = sql.Open("sqlite3", "./test.db")
 	if err != nil {
 		os.Exit(1)
 	}
-	defer db.Close()
 	defer os.Remove("./test.db")
 
 	// Create tables
@@ -37,6 +50,20 @@ func TestMain(m *testing.M) {
 }
 
 func TestGetAllUsers(t *testing.T) {
+	if err := clearDB(); err != nil {
+		t.Fatalf("Error clearing database: %v", err)
+	}
+
+	// Seed a test user
+	testUser := User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+	}
+	if err := seedTestUser(testUser); err != nil {
+		t.Fatalf("Error seeding test user: %v", err)
+	}
+
 	// Create a test request
 	req := httptest.NewRequest("GET", "/example/get/users/all", nil)
 	w := httptest.NewRecorder()
@@ -63,6 +90,20 @@ func TestGetAllUsers(t *testing.T) {
 }
 
 func TestGetUserByEmail(t *testing.T) {
+	if err := clearDB(); err != nil {
+		t.Fatalf("Error clearing database: %v", err)
+	}
+
+	// Seed a test user
+	testUser := User{
+		FirstName: "John",
+		LastName:  "Doe",
+		Email:     "john.doe@example.com",
+	}
+	if err := seedTestUser(testUser); err != nil {
+		t.Fatalf("Error seeding test user: %v", err)
+	}
+
 	// Test case 1: User not found
 	req := httptest.NewRequest("GET", "/example/get/user?email=notfound@example.com", nil)
 	w := httptest.NewRecorder()
@@ -85,13 +126,17 @@ func TestGetUserByEmail(t *testing.T) {
 }
 
 func TestCreateUser(t *testing.T) {
+	if err := clearDB(); err != nil {
+		t.Fatalf("Error clearing database: %v", err)
+	}
+
 	// Test case 1: Valid user creation
 	user := User{
 		FirstName: "John",
 		LastName:  "Doe",
 		Email:     "john.doe@example.com",
 	}
-	
+
 	body, _ := json.Marshal(user)
 	req := httptest.NewRequest("POST", "/example/create/user", bytes.NewBuffer(body))
 	w := httptest.NewRecorder()
@@ -106,7 +151,7 @@ func TestCreateUser(t *testing.T) {
 	invalidUser := User{
 		FirstName: "John",
 	}
-	
+
 	body, _ = json.Marshal(invalidUser)
 	req = httptest.NewRequest("POST", "/example/create/user", bytes.NewBuffer(body))
 	w = httptest.NewRecorder()
@@ -119,19 +164,26 @@ func TestCreateUser(t *testing.T) {
 }
 
 func TestUpdateUser(t *testing.T) {
-	// First create a user to update
-	user := User{
+	if err := clearDB(); err != nil {
+		t.Fatalf("Error clearing database: %v", err)
+	}
+
+	// Seed a test user
+	testUser := User{
 		FirstName: "John",
 		LastName:  "Doe",
 		Email:     "john.doe@example.com",
 	}
-	
+	if err := seedTestUser(testUser); err != nil {
+		t.Fatalf("Error seeding test user: %v", err)
+	}
+
 	// Test case 1: Valid update
 	updateData := User{
 		Email:     "john.doe@example.com",
 		FirstName: "Johnny",
 	}
-	
+
 	body, _ := json.Marshal(updateData)
 	req := httptest.NewRequest("PUT", "/example/update/user", bytes.NewBuffer(body))
 	w := httptest.NewRecorder()
@@ -147,7 +199,7 @@ func TestUpdateUser(t *testing.T) {
 		Email:     "notfound@example.com",
 		FirstName: "NotFound",
 	}
-	
+
 	body, _ = json.Marshal(notFoundUser)
 	req = httptest.NewRequest("PUT", "/example/update/user", bytes.NewBuffer(body))
 	w = httptest.NewRecorder()
