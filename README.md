@@ -33,3 +33,4 @@ The server will start on `http://localhost:8080`
 ## Available Endpoints
 
 - `GET /` - Returns a welcome message
+- `GET /example/get/users/all` - Returns a message indicating where all users would be returned
