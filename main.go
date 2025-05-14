@@ -1,12 +1,35 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	_ "github.com/mattn/go-sqlite3"
 )
+
+var db *sql.DB
+
+func initDB() error {
+	var err error
+	db, err = sql.Open("sqlite3", "./users.db")
+	if err != nil {
+		return err
+	}
+
+	// Create users table if it doesn't exist
+	createTable := `
+	CREATE TABLE IF NOT EXISTS users (
+		email TEXT PRIMARY KEY,
+		first_name TEXT NOT NULL,
+		last_name TEXT NOT NULL
+	);`
+
+	_, err = db.Exec(createTable)
+	return err
+}
 
 type User struct {
 	FirstName string `json:"firstName"`
@@ -114,6 +137,11 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	if err := initDB(); err != nil {
+		log.Fatal("Error initializing database:", err)
+	}
+	defer db.Close()
+
 	http.HandleFunc("/", homePage)
 	http.HandleFunc("/example/get/users/all", getAllUsers)
 	http.HandleFunc("/example/get/user", getUserByEmail)
