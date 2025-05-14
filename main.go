@@ -90,8 +90,21 @@ func getUserByEmail(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For demonstration, we'll just echo back the email
-	fmt.Fprintf(w, "Getting user details for email: %s", email)
+	var user User
+	err := db.QueryRow("SELECT first_name, last_name, email FROM users WHERE email = ?", email).
+		Scan(&user.FirstName, &user.LastName, &user.Email)
+	
+	if err == sql.ErrNoRows {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, "Error fetching user", http.StatusInternalServerError)
+		log.Printf("Error fetching user: %v", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(user)
 }
 
 func createUser(w http.ResponseWriter, r *http.Request) {
@@ -119,11 +132,18 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Insert user into database
+	_, err = db.Exec("INSERT INTO users (email, first_name, last_name) VALUES (?, ?, ?)",
+		user.Email, user.FirstName, user.LastName)
+	if err != nil {
+		http.Error(w, "Error creating user", http.StatusInternalServerError)
+		log.Printf("Error creating user: %v", err)
+		return
+	}
+
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-
-	// For demonstration, we'll just echo back the created user
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -158,10 +178,38 @@ func updateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check if user exists
+	var existingUser User
+	err = db.QueryRow("SELECT first_name, last_name, email FROM users WHERE email = ?", user.Email).
+		Scan(&existingUser.FirstName, &existingUser.LastName, &existingUser.Email)
+	
+	if err == sql.ErrNoRows {
+		http.Error(w, "User not found", http.StatusNotFound)
+		return
+	} else if err != nil {
+		http.Error(w, "Error fetching user", http.StatusInternalServerError)
+		log.Printf("Error fetching user: %v", err)
+		return
+	}
+
+	// Update user in database
+	if user.FirstName == "" {
+		user.FirstName = existingUser.FirstName
+	}
+	if user.LastName == "" {
+		user.LastName = existingUser.LastName
+	}
+
+	_, err = db.Exec("UPDATE users SET first_name = ?, last_name = ? WHERE email = ?",
+		user.FirstName, user.LastName, user.Email)
+	if err != nil {
+		http.Error(w, "Error updating user", http.StatusInternalServerError)
+		log.Printf("Error updating user: %v", err)
+		return
+	}
+
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
-
-	// For demonstration, we'll just echo back the updated user
 	json.NewEncoder(w).Encode(user)
 }
 
