@@ -54,7 +54,7 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Error reading request body", http.StatusBadRequest)
 		return
 	}
-	
+
 	err = json.Unmarshal(body, &user)
 	if err != nil {
 		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
@@ -70,8 +70,46 @@ func createUser(w http.ResponseWriter, r *http.Request) {
 	// Set response headers
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	
+
 	// For demonstration, we'll just echo back the created user
+	json.NewEncoder(w).Encode(user)
+}
+
+func updateUser(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+		return
+	}
+
+	var user User
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusBadRequest)
+		return
+	}
+
+	err = json.Unmarshal(body, &user)
+	if err != nil {
+		http.Error(w, "Error parsing JSON", http.StatusBadRequest)
+		return
+	}
+
+	// Validate that email is provided
+	if user.Email == "" {
+		http.Error(w, "Email is required", http.StatusBadRequest)
+		return
+	}
+
+	// Validate that at least first name or last name is provided
+	if user.FirstName == "" && user.LastName == "" {
+		http.Error(w, "Either firstName or lastName must be provided", http.StatusBadRequest)
+		return
+	}
+
+	// Set response headers
+	w.Header().Set("Content-Type", "application/json")
+	
+	// For demonstration, we'll just echo back the updated user
 	json.NewEncoder(w).Encode(user)
 }
 
@@ -80,6 +118,7 @@ func main() {
 	http.HandleFunc("/example/get/users/all", getAllUsers)
 	http.HandleFunc("/example/get/user", getUserByEmail)
 	http.HandleFunc("/example/create/user", createUser)
+	http.HandleFunc("/example/update/user", updateUser)
 	fmt.Printf("Starting server at port 8080\n")
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal(err)

@@ -36,6 +36,7 @@ The server will start on `http://localhost:8080`
 - `GET /example/get/users/all` - Returns a message indicating where all users would be returned
 - `GET /example/get/user?email=user@example.com` - Returns user details for the specified email
 - `POST /example/create/user` - Creates a new user
+- `PUT /example/update/user` - Updates an existing user
 
 ### POST /example/create/user
 Request body:
@@ -44,5 +45,15 @@ Request body:
     "firstName": "John",
     "lastName": "Doe",
     "email": "john.doe@example.com"
+}
+```
+
+### PUT /example/update/user
+Request body (at least firstName OR lastName must be provided):
+```json
+{
+    "email": "john.doe@example.com",
+    "firstName": "Johnny",
+    "lastName": "Doe"
 }
 ```
