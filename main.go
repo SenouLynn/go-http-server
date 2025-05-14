@@ -7,6 +7,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -46,7 +47,35 @@ func getAllUsers(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
-	fmt.Fprintf(w, "This would return all users")
+
+	rows, err := db.Query("SELECT first_name, last_name, email FROM users")
+	if err != nil {
+		http.Error(w, "Error fetching users from database", http.StatusInternalServerError)
+		log.Printf("Error fetching users: %v", err)
+		return
+	}
+	defer rows.Close()
+
+	var users []User
+	for rows.Next() {
+		var user User
+		err := rows.Scan(&user.FirstName, &user.LastName, &user.Email)
+		if err != nil {
+			http.Error(w, "Error reading user data", http.StatusInternalServerError)
+			log.Printf("Error scanning user row: %v", err)
+			return
+		}
+		users = append(users, user)
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Error reading user data", http.StatusInternalServerError)
+		log.Printf("Error after scanning users: %v", err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(users)
 }
 
 func getUserByEmail(w http.ResponseWriter, r *http.Request) {
